@@ -234,15 +234,24 @@
             display: inline-block;
         }
 
-        .loading-dots::after {
-            content: '...';
-            animation: dots 1.5s infinite;
+        .start-quiz-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            transition: background 0.3s;
         }
 
-        @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
+        .start-quiz-btn:hover {
+            background: #45a049;
+        }
+
+        .initial-message {
+            text-align: center;
         }
     </style>
 </head>
@@ -254,34 +263,21 @@
         </div>
         
         <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message">
+            <div class="message bot-message initial-message">
                 Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. 
-                Spør meg om Arbeiderpartiet, Høyre, FrP, KrF, eller Venstre. For eksempel: "Hva mener Høyre om skatt?"
+                Du kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.
+                <br><br>
+                <button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>
             </div>
         </div>
 
-        <div class="predefined-questions">
+        <div class="predefined-questions" id="predefinedQuestions" style="display: none;">
             <h3>Eksempel spørsmål:</h3>
             <div class="question-buttons">
-                <button class="question-btn" onclick="sendPredefinedQuestion('Hva mener Høyre om skatt?')">
-                    Hva mener Høyre om skatt?
-                </button>
-                <button class="question-btn" onclick="sendPredefinedQuestion('Hva er FrP sin politikk på innvandring?')">
-                    Hva er FrP sin politikk på innvandring?
-                </button>
-                <button class="question-btn" onclick="sendPredefinedQuestion('Hva mener Arbeiderpartiet om miljø?')">
-                    Hva mener Arbeiderpartiet om miljø?
-                </button>
-                <button class="question-btn" onclick="sendPredefinedQuestion('Hva er KrF sin politikk på familie?')">
-                    Hva er KrF sin politikk på familie?
-                </button>
-                <button class="question-btn" onclick="sendPredefinedQuestion('Hva mener Venstre om utdanning?')">
-                    Hva mener Venstre om utdanning?
-                </button>
             </div>
         </div>
 
-        <div class="input-section">
+        <div class="input-section" id="chatInputSection">
             <div class="input-container">
                 <input type="text" 
                        id="messageInput" 
@@ -293,38 +289,38 @@
                 </button>
             </div>
         </div>
+
+        <div class="input-section" id="quizInputSection" style="display: none;">
+            <div class="input-container">
+                <input type="text" 
+                       id="quizAnswerInput" 
+                       class="message-input" 
+                       placeholder="Skriv ditt svar her..."
+                       onkeypress="handleQuizKeyPress(event)">
+                <button id="submitQuizAnswerBtn" class="send-btn" onclick="submitQuizAnswer()">
+                    Svar
+                </button>
+            </div>
+        </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
+        const predefinedQuestionsDiv = document.getElementById('predefinedQuestions');
+        const chatInputSection = document.getElementById('chatInputSection');
+        const quizInputSection = document.getElementById('quizInputSection');
+        const quizAnswerInput = document.getElementById('quizAnswerInput');
+        const submitQuizAnswerBtn = document.getElementById('submitQuizAnswerBtn');
         let isLoading = false;
+        let currentQuestion = '';
+        let questionNumber = 0;
+        const totalQuestions = 5; // Define total questions for the quiz
 
         function formatText(text) {
-            // Convert markdown-style formatting to HTML
-            return text
-                // Bold text: **text** or __text__
-                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                .replace(/__(.*?)__/g, '<strong>$1</strong>')
-                // Italic text: *text* or _text_
-                .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-                .replace(/_([^_]+)_/g, '<em>$1</em>')
-                // Bullet points: * item or - item
-                .replace(/^\s*[*-]\s+(.+)$/gm, '<li>$1</li>')
-                // Wrap consecutive <li> elements in <ul>
-                .replace(/(<li>.*<\/li>)/gs, function(match) {
-                    return '<ul>' + match + '</ul>';
-                })
-                // Line breaks
-                .replace(/\n\n/g, '</p><p>')
-                .replace(/\n/g, '<br>')
-                // Wrap in paragraph if not already wrapped
-                .replace(/^(?!<[uo]l|<h[1-6]|<p)/gm, '<p>')
-                .replace(/(?<!<\/[uo]l>|<\/h[1-6]>|<\/p>)$/gm, '</p>')
-                // Clean up empty paragraphs
-                .replace(/<p><\/p>/g, '')
-                .replace(/<p>\s*<\/p>/g, '');
+            return marked.parse(text);
         }
 
         function addMessage(message, isUser = false) {
@@ -362,6 +358,9 @@
             sendBtn.disabled = loading;
             messageInput.disabled = loading;
             sendBtn.textContent = loading ? 'Venter...' : 'Send';
+            submitQuizAnswerBtn.disabled = loading;
+            quizAnswerInput.disabled = loading;
+            submitQuizAnswerBtn.textContent = loading ? 'Venter...' : 'Svar';
         }
 
         async function sendMessage() {
@@ -402,6 +401,128 @@
             }
         }
 
+        async function startQuiz() {
+            chatMessages.innerHTML = ''; // Clear chat messages
+            addMessage('Velkommen til den politiske quizen! Jeg vil stille deg 5 spørsmål for å finne ut hvilket parti du er mest enig med.');
+            setLoading(true);
+            showLoading();
+
+            try {
+                const response = await fetch('/start_quiz', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                const data = await response.json();
+                if (data.error) {
+                    addMessage(`Feil: ${data.error}`);
+                } else {
+                    chatInputSection.style.display = 'none';
+                    predefinedQuestionsDiv.style.display = 'none';
+                    quizInputSection.style.display = 'block';
+                    getQuestion();
+                }
+            } catch (error) {
+                addMessage('Beklager, kunne ikke starte quizen.');
+                console.error('Error starting quiz:', error);
+            } finally {
+                hideLoading();
+                setLoading(false);
+            }
+        }
+
+        async function getQuestion() {
+            setLoading(true);
+            showLoading();
+            try {
+                const response = await fetch('/get_question');
+                const data = await response.json();
+
+                if (data.error) {
+                    addMessage(`Feil: ${data.error}`);
+                    setLoading(false);
+                    hideLoading();
+                    return;
+                }
+
+                if (data.question === 'QUIZ_COMPLETE') {
+                    addMessage('Du har svart på alle spørsmålene. Finner din match...');
+                    getMatch();
+                } else {
+                    currentQuestion = data.question;
+                    questionNumber = data.question_number;
+                    addMessage(`Spørsmål ${questionNumber} av ${totalQuestions}: ${currentQuestion}`);
+                    quizAnswerInput.value = '';
+                    quizAnswerInput.focus();
+                }
+            } catch (error) {
+                addMessage('Beklager, kunne ikke hente spørsmål.');
+                console.error('Error getting question:', error);
+            } finally {
+                hideLoading();
+                setLoading(false);
+            }
+        }
+
+        async function submitQuizAnswer() {
+            const answer = quizAnswerInput.value.trim();
+            if (!answer || isLoading) return;
+
+            addMessage(answer, true);
+            setLoading(true);
+            showLoading();
+
+            try {
+                const response = await fetch('/submit_answer', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: currentQuestion, answer: answer })
+                });
+                const data = await response.json();
+                if (data.error) {
+                    addMessage(`Feil: ${data.error}`);
+                } else {
+                    getQuestion(); // Get next question or finish quiz
+                }
+            } catch (error) {
+                addMessage('Beklager, kunne ikke sende svar.');
+                console.error('Error submitting answer:', error);
+            }
+ finally {
+                hideLoading();
+                setLoading(false);
+            }
+        }
+
+        async function getMatch() {
+            setLoading(true);
+            showLoading();
+            try {
+                const response = await fetch('/get_match');
+                const data = await response.json();
+
+                if (data.error) {
+                    addMessage(`Feil: ${data.error}`);
+                } else {
+                    addMessage(`**Resultat:**\n\n${data.match_result}`);
+                    // Reset UI to chat mode
+                    chatInputSection.style.display = 'block';
+                    predefinedQuestionsDiv.style.display = 'block';
+                    quizInputSection.style.display = 'none';
+                    messageInput.focus();
+                }
+            } catch (error) {
+                addMessage('Beklager, kunne ikke finne din match.');
+                console.error('Error getting match:', error);
+            } finally {
+                hideLoading();
+                setLoading(false);
+            }
+        }
+
         function sendPredefinedQuestion(question) {
             messageInput.value = question;
             sendMessage();
@@ -414,9 +535,61 @@
             }
         }
 
-        // Focus on input when page loads
+        function handleQuizKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                submitQuizAnswer();
+            }
+        }
+
+        async function loadPartiesAndInitialMessage() {
+            try {
+                const response = await fetch('/parties');
+                const data = await response.json();
+                const parties = data.parties;
+
+                // Update initial bot message
+                const initialBotMessageDiv = document.querySelector('.chat-messages .initial-message');
+                if (initialBotMessageDiv) {
+                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg om ${parties.join(', ')}, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>`);
+                }
+
+                // Generate predefined questions
+                const questionButtonsDiv = predefinedQuestionsDiv.querySelector('.question-buttons');
+                questionButtonsDiv.innerHTML = ''; // Clear existing buttons
+                const predefinedQuestions = [
+                    "Hva mener [PARTY_PLACEHOLDER] om skatt?",
+                    "Hva er [PARTY_PLACEHOLDER] sin politikk på innvandring?",
+                    "Hva mener [PARTY_PLACEHOLDER] om miljø?",
+                    "Hva er [PARTY_PLACEHOLDER] sin politikk på familie?",
+                    "Hva mener [PARTY_PLACEHOLDER] om utdanning?"
+                ];
+
+                parties.forEach(party => {
+                    predefinedQuestions.forEach(q => {
+                        const question = q.replace('[PARTY_PLACEHOLDER]', party);
+                        const button = document.createElement('button');
+                        button.className = 'question-btn';
+                        button.textContent = question;
+                        button.onclick = () => sendPredefinedQuestion(question);
+                        questionButtonsDiv.appendChild(button);
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error loading parties:', error);
+                // Fallback to default message if parties cannot be loaded
+                const initialBotMessageDiv = document.querySelector('.chat-messages .initial-message');
+                if (initialBotMessageDiv) {
+                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>`);
+                }
+            }
+        }
+
+        // Focus on input and load parties when page loads
         window.addEventListener('load', () => {
             messageInput.focus();
+            loadPartiesAndInitialMessage();
         });
     </script>
 </body>

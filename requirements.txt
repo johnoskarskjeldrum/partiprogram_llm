@@ -1,4 +1,5 @@
-pypdf
+Flask
 google-generativeai
+pypdf
 python-dotenv
-flask
+Werkzeug
