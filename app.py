@@ -41,8 +41,9 @@ def detect_party_from_message(message):
             party_name_mappings['arbeiderpartiet'] = filename_key
             party_name_mappings['ap'] = filename_key
             party_name_mappings['arbeiderparti'] = filename_key  # Common typo
-        elif "høyre" in filename_key:
-            party_name_mappings['høyre'] = filename_key
+        elif "hoyre" in filename_key:
+            party_name_mappings['hoyre'] = filename_key
+            party_name_mappings['høyre'] = filename_key  # Original spelling
             party_name_mappings['høgre'] = filename_key  # Alternative spelling
             party_name_mappings['høre'] = filename_key  # Common typo
             party_name_mappings['høyr'] = filename_key  # Partial match
@@ -550,11 +551,11 @@ def debug_mappings():
             party_name_mappings['ap'] = filename_key
             party_name_mappings['arbeiderparti'] = filename_key
             party_name_mappings['arbeider'] = filename_key
-        elif "høyre" in filename_key:
+        elif "hoyre" in filename_key:
             party_name_mappings['høyre'] = filename_key
             party_name_mappings['høgre'] = filename_key
             party_name_mappings['høre'] = filename_key
-            party_name_mappings['høyr'] = filename_key
+            party_name_mappings['hoyre'] = filename_key
         elif "frp" in filename_key:
             party_name_mappings['frp'] = filename_key
             party_name_mappings['fremskrittspartiet'] = filename_key
