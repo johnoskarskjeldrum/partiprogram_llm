@@ -3,3 +3,5 @@ google-generativeai
 pypdf
 python-dotenv
 Werkzeug
+fuzzywuzzy
+python-Levenshtein

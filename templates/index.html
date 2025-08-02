@@ -268,6 +268,7 @@
                 Du kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.
                 <br><br>
                 <button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>
+                <button class="start-quiz-btn" onclick="skipQuiz()" style="margin-left: 10px; background: #FF9800;">Skip Quiz</button>
             </div>
         </div>
 
@@ -432,6 +433,17 @@
             }
         }
 
+        async function skipQuiz() {
+            chatMessages.innerHTML = ''; // Clear chat messages
+            addMessage('Du hoppet over quizen. Du kan nå spørre meg direkte om hva norske partier mener om ulike politiske spørsmål.');
+            
+            // Show chat interface
+            chatInputSection.style.display = 'block';
+            predefinedQuestionsDiv.style.display = 'block';
+            quizInputSection.style.display = 'none';
+            messageInput.focus();
+        }
+
         async function getQuestion() {
             setLoading(true);
             showLoading();
@@ -551,29 +563,31 @@
                 // Update initial bot message
                 const initialBotMessageDiv = document.querySelector('.chat-messages .initial-message');
                 if (initialBotMessageDiv) {
-                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg om ${parties.join(', ')}, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>`);
+                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg om ${parties.join(', ')}, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button><button class="start-quiz-btn" onclick="skipQuiz()" style="margin-left: 10px; background: #FF9800;">Skip Quiz</button>`);
                 }
 
                 // Generate predefined questions
                 const questionButtonsDiv = predefinedQuestionsDiv.querySelector('.question-buttons');
                 questionButtonsDiv.innerHTML = ''; // Clear existing buttons
-                const predefinedQuestions = [
-                    "Hva mener [PARTY_PLACEHOLDER] om skatt?",
-                    "Hva er [PARTY_PLACEHOLDER] sin politikk på innvandring?",
-                    "Hva mener [PARTY_PLACEHOLDER] om miljø?",
-                    "Hva er [PARTY_PLACEHOLDER] sin politikk på familie?",
-                    "Hva mener [PARTY_PLACEHOLDER] om utdanning?"
+                
+                // Static predefined questions covering different topics
+                const staticQuestions = [
+                    "Hva mener Arbeiderpartiet om skatt?",
+                    "Hva er Høyres politikk på innvandring?",
+                    "Hva mener FrP om miljø?",
+                    "Hva er SV sin politikk på familie?",
+                    "Hva mener MDG om utdanning?",
+                    "Hva er KrFs politikk på helse?",
+                    "Hva mener Venstre om bolig?",
+                    "Hva er Senterpartiets politikk på transport?"
                 ];
 
-                parties.forEach(party => {
-                    predefinedQuestions.forEach(q => {
-                        const question = q.replace('[PARTY_PLACEHOLDER]', party);
-                        const button = document.createElement('button');
-                        button.className = 'question-btn';
-                        button.textContent = question;
-                        button.onclick = () => sendPredefinedQuestion(question);
-                        questionButtonsDiv.appendChild(button);
-                    });
+                staticQuestions.forEach(question => {
+                    const button = document.createElement('button');
+                    button.className = 'question-btn';
+                    button.textContent = question;
+                    button.onclick = () => sendPredefinedQuestion(question);
+                    questionButtonsDiv.appendChild(button);
                 });
 
             } catch (error) {
@@ -581,7 +595,7 @@
                 // Fallback to default message if parties cannot be loaded
                 const initialBotMessageDiv = document.querySelector('.chat-messages .initial-message');
                 if (initialBotMessageDiv) {
-                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>`);
+                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button><button class="start-quiz-btn" onclick="skipQuiz()" style="margin-left: 10px; background: #FF9800;">Skip Quiz</button>`);
                 }
             }
         }

@@ -4,6 +4,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 import re
 from utils import load_all_party_programs
+from fuzzywuzzy import fuzz, process
 
 load_dotenv()
 
@@ -28,33 +29,138 @@ def load_party_programs_into_cache():
 
 
 def detect_party_from_message(message):
-    """Detect which party the user is asking about."""
+    """Detect which party the user is asking about using fuzzy string matching."""
     message_lower = message.lower()
+    print(f"DEBUG: Processing message: '{message}' -> '{message_lower}'")
     
-    # Create dynamic party name mappings from loaded programs
-    dynamic_party_mappings = {}
+    # Create comprehensive party name mappings from loaded programs
+    party_name_mappings = {}
     for filename_key in party_programs.keys():
-        # Extract common names from filenames (e.g., "arbeiderpartiets-partiprogram (1)" -> "arbeiderpartiet", "ap")
-        if "arbeiderpartiets-partiprogram" in filename_key:
-            dynamic_party_mappings['arbeiderpartiet'] = filename_key
-            dynamic_party_mappings['ap'] = filename_key
-        elif "Høyres_stortingsvalgprogram" in filename_key:
-            dynamic_party_mappings['høyre'] = filename_key
-            dynamic_party_mappings['høgre'] = filename_key
-        elif "FrP-Partiprogram" in filename_key:
-            dynamic_party_mappings['frp'] = filename_key
-            dynamic_party_mappings['fremskrittspartiet'] = filename_key
-        elif "KRF_Partiprogram" in filename_key:
-            dynamic_party_mappings['krf'] = filename_key
-            dynamic_party_mappings['kristelig folkeparti'] = filename_key
-        elif "venstre-stortingsprogram" in filename_key:
-            dynamic_party_mappings['venstre'] = filename_key
+        # Extract common names from filenames based on actual files in partiprogram folder
+        if "arbeiderpartiets" in filename_key:
+            party_name_mappings['arbeiderpartiet'] = filename_key
+            party_name_mappings['ap'] = filename_key
+            party_name_mappings['arbeiderparti'] = filename_key  # Common typo
+        elif "høyre" in filename_key:
+            party_name_mappings['høyre'] = filename_key
+            party_name_mappings['høgre'] = filename_key  # Alternative spelling
+            party_name_mappings['høre'] = filename_key  # Common typo
+            party_name_mappings['høyr'] = filename_key  # Partial match
+        elif "frp" in filename_key:
+            party_name_mappings['frp'] = filename_key
+            party_name_mappings['fremskrittspartiet'] = filename_key
+            party_name_mappings['fremskritt'] = filename_key  # Partial match
+        elif "krf" in filename_key:
+            party_name_mappings['krf'] = filename_key
+            party_name_mappings['kristelig folkeparti'] = filename_key
+            party_name_mappings['kristelig'] = filename_key  # Partial match
+        elif "venstre" in filename_key:
+            party_name_mappings['venstre'] = filename_key
+            party_name_mappings['venstrepartiet'] = filename_key  # Common variation
+        elif "velferd_og_innovasjonspartiet" in filename_key:
+            party_name_mappings['vipartiet'] = filename_key
+            party_name_mappings['velferd og innovasjonspartiet'] = filename_key
+            party_name_mappings['velferdspartiet'] = filename_key  # Common variation
+        elif "sosialistisk_vensterparti" in filename_key:
+            party_name_mappings['sv'] = filename_key
+            party_name_mappings['sosialistisk venstreparti'] = filename_key
+            party_name_mappings['sosialistisk'] = filename_key  # Partial match
+        elif "rodt" in filename_key:
+            party_name_mappings['rødt'] = filename_key
+            party_name_mappings['rodt'] = filename_key
+        elif "partiet_sentrum" in filename_key:
+            party_name_mappings['partiet sentrum'] = filename_key
+            party_name_mappings['sentrum'] = filename_key
+            party_name_mappings['sentrumspartiet'] = filename_key  # Common variation
+        elif "pensjonistpartiet" in filename_key:
+            party_name_mappings['pensjonistpartiet'] = filename_key
+            party_name_mappings['pensjonist'] = filename_key  # Partial match
+        elif "miljopartiet_de_gronne" in filename_key:
+            party_name_mappings['mdg'] = filename_key
+            party_name_mappings['miljøpartiet de grønne'] = filename_key
+            party_name_mappings['miljøpartiet'] = filename_key  # Partial match
+            party_name_mappings['de grønne'] = filename_key  # Common name
+        elif "konservativt" in filename_key:
+            party_name_mappings['konservativt'] = filename_key
+            party_name_mappings['konservativ'] = filename_key  # Common variation
+        elif "industri_og_næringspartiet" in filename_key:
+            party_name_mappings['inp'] = filename_key
+            party_name_mappings['industri og næringspartiet'] = filename_key
+            party_name_mappings['industripartiet'] = filename_key  # Common variation
+        elif "generasjonspartiet" in filename_key:
+            party_name_mappings['generasjonspartiet'] = filename_key
+            party_name_mappings['generasjon'] = filename_key  # Partial match
+            party_name_mappings['generasjons'] = filename_key  # Partial match
+        elif "fred_og_rettferdighet" in filename_key:
+            party_name_mappings['fred og rettferdighet'] = filename_key
+            party_name_mappings['fred'] = filename_key  # Partial match
+        elif "norgesdemokratene" in filename_key:
+            party_name_mappings['norgesdemokratene'] = filename_key
+            party_name_mappings['norgesdemokrat'] = filename_key  # Partial match
+        elif "senterpartiet_partiprogram" in filename_key:
+            party_name_mappings['sp'] = filename_key
+            party_name_mappings['senterpartiet'] = filename_key
+            party_name_mappings['senter'] = filename_key  # Partial match
+        elif "partiet_dni" in filename_key:
+            party_name_mappings['dni'] = filename_key
+            party_name_mappings['partiet dni'] = filename_key
+            party_name_mappings['partiet d n i'] = filename_key  # Common variation
+            party_name_mappings['d n i'] = filename_key  # Abbreviation
     
-    for party_keyword, party_file in dynamic_party_mappings.items():
+    # First, try exact substring matching (faster)
+    # Sort by length (longest first) to prioritize longer, more specific matches
+    sorted_mappings = sorted(party_name_mappings.items(), key=lambda x: len(x[0]), reverse=True)
+    
+    for party_keyword, party_file in sorted_mappings:
         if party_keyword in message_lower:
+            print(f"DEBUG: Exact match found: '{party_keyword}' -> '{party_file}'")
             return party_file
     
-    return None
+    # If no exact match, try fuzzy matching
+    # Extract potential party names from the message (words that might be party names)
+    words = message_lower.split()
+    potential_parties = []
+    
+    # Look for multi-word party names first
+    for i in range(len(words)):
+        for j in range(i + 1, min(i + 4, len(words) + 1)):  # Check up to 3-word combinations
+            phrase = ' '.join(words[i:j])
+            potential_parties.append(phrase)
+    
+    # Add single words
+    potential_parties.extend(words)
+    
+    # Use fuzzy matching to find the best match
+    best_match = None
+    best_score = 0
+    threshold = 80  # Increased threshold to reduce false positives
+    
+    print(f"DEBUG: Trying fuzzy matching with {len(potential_parties)} potential parties")
+    
+    for potential_party in potential_parties:
+        if len(potential_party) < 3:  # Skip very short words (increased from 2)
+            continue
+            
+        # Find the best matching party name
+        match_result = process.extractOne(potential_party, party_name_mappings.keys())
+        if match_result:
+            matched_name, score = match_result
+            # Prioritize longer matches and exact substring matches
+            if score > best_score and score >= threshold:
+                # Bonus for longer matches to avoid short word confusion
+                length_bonus = min(len(potential_party) / 10, 5)  # Up to 5 point bonus
+                adjusted_score = score + length_bonus
+                if adjusted_score > best_score:
+                    best_score = adjusted_score
+                    best_match = party_name_mappings[matched_name]
+                    print(f"DEBUG: Fuzzy match: '{potential_party}' -> '{matched_name}' (score: {score}, adjusted: {adjusted_score})")
+    
+    if best_match:
+        print(f"DEBUG: Final fuzzy match: '{best_match}'")
+    else:
+        print("DEBUG: No fuzzy match found")
+    
+    return best_match
 
 def extract_relevant_content(party_text, question):
     """Extract relevant sections from party text based on question keywords."""
@@ -303,11 +409,64 @@ def chat():
         detected_party = detect_party_from_message(user_message)
         
         if not detected_party:
-            # Provide a list of available parties if detection fails
-            available_parties = ", ".join([p.replace('-', ' ').replace('_', ' ').replace('(1)', '').strip() for p in party_programs.keys()])
-            return jsonify({
-                'response': f'Jeg forstår ikke hvilket parti du spør om. Vennligst spesifiser parti (f.eks. "Hva mener Høyre om skatt?" eller "FrP sin politikk på innvandring"). Tilgjengelige partier er: {available_parties}.'
-            })
+            # Try to suggest similar party names using fuzzy matching
+            words = user_message.lower().split()
+            suggestions = []
+            
+            for word in words:
+                if len(word) >= 3:  # Only suggest for words with 3+ characters
+                    # Get all available party names
+                    all_party_names = []
+                    for filename_key in party_programs.keys():
+                        if "arbeiderpartiets" in filename_key:
+                            all_party_names.extend(['Arbeiderpartiet', 'AP'])
+                        elif "høyre" in filename_key:
+                            all_party_names.extend(['Høyre'])
+                        elif "frp" in filename_key:
+                            all_party_names.extend(['FrP', 'Fremskrittspartiet'])
+                        elif "krf" in filename_key:
+                            all_party_names.extend(['KrF', 'Kristelig Folkeparti'])
+                        elif "venstre" in filename_key:
+                            all_party_names.extend(['Venstre'])
+                        elif "velferd_og_innovasjonspartiet" in filename_key:
+                            all_party_names.extend(['Velferd og Innovasjonspartiet', 'VIPartiet'])
+                        elif "sosialistisk_vensterparti" in filename_key:
+                            all_party_names.extend(['Sosialistisk Venstreparti', 'SV'])
+                        elif "rodt" in filename_key:
+                            all_party_names.extend(['Rødt'])
+                        elif "partiet_sentrum" in filename_key:
+                            all_party_names.extend(['Partiet Sentrum'])
+                        elif "pensjonistpartiet" in filename_key:
+                            all_party_names.extend(['Pensjonistpartiet'])
+                        elif "miljopartiet_de_gronne" in filename_key:
+                            all_party_names.extend(['Miljøpartiet De Grønne', 'MDG'])
+                        elif "konservativt" in filename_key:
+                            all_party_names.extend(['Konservativt'])
+                        elif "industri_og_næringspartiet" in filename_key:
+                            all_party_names.extend(['Industri og Næringspartiet', 'INP'])
+                        elif "generasjonspartiet" in filename_key:
+                            all_party_names.extend(['Generasjonspartiet'])
+                        elif "fred_og_rettferdighet" in filename_key:
+                            all_party_names.extend(['Fred og Rettferdighet'])
+                        elif "norgesdemokratene" in filename_key:
+                            all_party_names.extend(['Norgesdemokratene'])
+                        elif "senterpartiet_partiprogram" in filename_key:
+                            all_party_names.extend(['Senterpartiet', 'SP'])
+                    
+                    # Find similar party names
+                    similar_parties = process.extract(word, all_party_names, limit=2)
+                    for party_name, score in similar_parties:
+                        if score >= 60 and party_name not in suggestions:  # Lower threshold for suggestions
+                            suggestions.append(party_name)
+            
+            # Create helpful error message
+            if suggestions:
+                suggestions_text = ", ".join(suggestions[:3])  # Limit to 3 suggestions
+                error_msg = f'Jeg forstår ikke hvilket parti du spør om. Mente du kanskje: {suggestions_text}? Prøv å skrive partinavnet mer spesifikt.'
+            else:
+                error_msg = 'Jeg forstår ikke hvilket parti du spør om. Prøv å skrive partinavnet mer spesifikt (f.eks. "Hva mener Høyre om skatt?" eller "FrP sin politikk på innvandring").'
+            
+            return jsonify({'response': error_msg})
         
         # Get party program
         if detected_party not in party_programs:
@@ -331,21 +490,137 @@ def chat():
 @app.route('/parties')
 def get_parties():
     """Get list of available parties."""
-    # Return a more user-friendly list of party names
+    # Return a more user-friendly list of party names based on actual files
     user_friendly_party_names = []
     for filename_key in party_programs.keys():
-        if "arbeiderpartiets-partiprogram" in filename_key:
+        if "arbeiderpartiets" in filename_key:
             user_friendly_party_names.append('Arbeiderpartiet')
-        elif "Høyres_stortingsvalgprogram" in filename_key:
+        elif "høyre" in filename_key:
             user_friendly_party_names.append('Høyre')
-        elif "FrP-Partiprogram" in filename_key:
+        elif "frp" in filename_key:
             user_friendly_party_names.append('FrP')
-        elif "KRF_Partiprogram" in filename_key:
+        elif "krf" in filename_key:
             user_friendly_party_names.append('KrF')
-        elif "venstre-stortingsprogram" in filename_key:
+        elif "venstre" in filename_key:
             user_friendly_party_names.append('Venstre')
+        elif "velferd_og_innovasjonspartiet" in filename_key:
+            user_friendly_party_names.append('Velferd og Innovasjonspartiet')
+        elif "sosialistisk_vensterparti" in filename_key:
+            user_friendly_party_names.append('Sosialistisk Venstreparti')
+        elif "rodt" in filename_key:
+            user_friendly_party_names.append('Rødt')
+        elif "partiet_sentrum" in filename_key:
+            user_friendly_party_names.append('Partiet Sentrum')
+        elif "pensjonistpartiet" in filename_key:
+            user_friendly_party_names.append('Pensjonistpartiet')
+        elif "miljopartiet_de_gronne" in filename_key:
+            user_friendly_party_names.append('Miljøpartiet De Grønne')
+        elif "konservativt" in filename_key:
+            user_friendly_party_names.append('Konservativt')
+        elif "industri_og_næringspartiet" in filename_key:
+            user_friendly_party_names.append('Industri og Næringspartiet')
+        elif "generasjonspartiet" in filename_key:
+            user_friendly_party_names.append('Generasjonspartiet')
+        elif "fred_og_rettferdighet" in filename_key:
+            user_friendly_party_names.append('Fred og Rettferdighet')
+        elif "norgesdemokratene" in filename_key:
+            user_friendly_party_names.append('Norgesdemokratene')
+        elif "senterpartiet_partiprogram" in filename_key:
+            user_friendly_party_names.append('Senterpartiet')
+        elif "partiet_dni" in filename_key:
+            user_friendly_party_names.append('Partiet DNI')
     return jsonify({'parties': sorted(list(set(user_friendly_party_names)))})
+
+@app.route('/debug/parties')
+def debug_parties():
+    """Debug endpoint to see what party programs are loaded."""
+    return jsonify({
+        'loaded_parties': list(party_programs.keys()),
+        'party_count': len(party_programs)
+    })
+
+@app.route('/debug/mappings')
+def debug_mappings():
+    """Debug endpoint to see party name mappings."""
+    # Create the same mappings as in detect_party_from_message
+    party_name_mappings = {}
+    for filename_key in party_programs.keys():
+        if "arbeiderpartiets" in filename_key:
+            party_name_mappings['arbeiderpartiet'] = filename_key
+            party_name_mappings['ap'] = filename_key
+            party_name_mappings['arbeiderparti'] = filename_key
+            party_name_mappings['arbeider'] = filename_key
+        elif "høyre" in filename_key:
+            party_name_mappings['høyre'] = filename_key
+            party_name_mappings['høgre'] = filename_key
+            party_name_mappings['høre'] = filename_key
+            party_name_mappings['høyr'] = filename_key
+        elif "frp" in filename_key:
+            party_name_mappings['frp'] = filename_key
+            party_name_mappings['fremskrittspartiet'] = filename_key
+            party_name_mappings['fremskritt'] = filename_key
+        elif "krf" in filename_key:
+            party_name_mappings['krf'] = filename_key
+            party_name_mappings['kristelig folkeparti'] = filename_key
+            party_name_mappings['kristelig'] = filename_key
+        elif "venstre" in filename_key:
+            party_name_mappings['venstre'] = filename_key
+            party_name_mappings['venstrepartiet'] = filename_key
+        elif "velferd_og_innovasjonspartiet" in filename_key:
+            party_name_mappings['vipartiet'] = filename_key
+            party_name_mappings['velferd og innovasjonspartiet'] = filename_key
+            party_name_mappings['velferdspartiet'] = filename_key
+        elif "sosialistisk_vensterparti" in filename_key:
+            party_name_mappings['sv'] = filename_key
+            party_name_mappings['sosialistisk venstreparti'] = filename_key
+            party_name_mappings['sosialistisk'] = filename_key
+        elif "rodt" in filename_key:
+            party_name_mappings['rødt'] = filename_key
+            party_name_mappings['rodt'] = filename_key
+        elif "partiet_sentrum" in filename_key:
+            party_name_mappings['partiet sentrum'] = filename_key
+            party_name_mappings['sentrum'] = filename_key
+            party_name_mappings['sentrumspartiet'] = filename_key
+        elif "pensjonistpartiet" in filename_key:
+            party_name_mappings['pensjonistpartiet'] = filename_key
+            party_name_mappings['pensjonist'] = filename_key
+        elif "miljopartiet_de_gronne" in filename_key:
+            party_name_mappings['mdg'] = filename_key
+            party_name_mappings['miljøpartiet de grønne'] = filename_key
+            party_name_mappings['miljøpartiet'] = filename_key
+            party_name_mappings['de grønne'] = filename_key
+        elif "konservativt" in filename_key:
+            party_name_mappings['konservativt'] = filename_key
+            party_name_mappings['konservativ'] = filename_key
+        elif "industri_og_næringspartiet" in filename_key:
+            party_name_mappings['inp'] = filename_key
+            party_name_mappings['industri og næringspartiet'] = filename_key
+            party_name_mappings['industripartiet'] = filename_key
+        elif "generasjonspartiet" in filename_key:
+            party_name_mappings['generasjonspartiet'] = filename_key
+            party_name_mappings['generasjon'] = filename_key
+            party_name_mappings['generasjons'] = filename_key
+        elif "fred_og_rettferdighet" in filename_key:
+            party_name_mappings['fred og rettferdighet'] = filename_key
+            party_name_mappings['fred'] = filename_key
+        elif "norgesdemokratene" in filename_key:
+            party_name_mappings['norgesdemokratene'] = filename_key
+            party_name_mappings['norgesdemokrat'] = filename_key
+        elif "senterpartiet_partiprogram" in filename_key:
+            party_name_mappings['sp'] = filename_key
+            party_name_mappings['senterpartiet'] = filename_key
+            party_name_mappings['senter'] = filename_key
+        elif "partiet_dni" in filename_key:
+            party_name_mappings['dni'] = filename_key
+            party_name_mappings['partiet dni'] = filename_key
+            party_name_mappings['partiet d n i'] = filename_key
+            party_name_mappings['d n i'] = filename_key
+    
+    return jsonify({
+        'party_mappings': party_name_mappings,
+        'mapping_count': len(party_name_mappings)
+    })
 
 if __name__ == '__main__':
     load_party_programs_into_cache()
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=8080, host='0.0.0.0')
