@@ -12,6 +12,13 @@ Applikasjonen bruker Google Gemini, en avansert språkmodell, til å analysere o
 - **Brukervennlig Grensesnitt**: Enkel og intuitiv navigasjon med to hovedmoduser: Quiz og Chat.
 - **"Om Appen"-side**: En informativ side som forklarer hvordan appen fungerer og inkluderer en ansvarsfraskrivelse om bruk av språkmodeller.
 
+<img width="1240" height="821" alt="Screenshot 2025-08-03 at 10 07 18" src="https://github.com/user-attachments/assets/21fa7c9c-3f41-410e-920b-98104ca54838" />
+
+<img width="1235" height="820" alt="Screenshot 2025-08-03 at 10 08 52" src="https://github.com/user-attachments/assets/dc37a907-1d2d-44e7-a6ad-49bf605e56e5" />
+
+<img width="1486" height="821" alt="Screenshot 2025-08-03 at 10 19 00" src="https://github.com/user-attachments/assets/a35786b3-bc8b-4f01-b9d7-c1afaad2e26c" />
+
+
 ## Teknologioversikt
 
 - **Backend**: Python med Flask
