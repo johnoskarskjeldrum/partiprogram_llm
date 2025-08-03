@@ -1,349 +1,176 @@
 <!DOCTYPE html>
-<html lang="no">
+<html lang="no" class="h-full bg-gray-100">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Politisk Parti Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-
-        .chat-container {
-            width: 100vw;
-            height: 100vh;
-            background: white;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .chat-header {
-            background: #3E442B;
-            color: white;
-            padding: 15px 20px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        .chat-header h1 {
-            margin-bottom: 5px;
-            font-size: 24px;
-        }
-
-        .chat-header p {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .chat-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 20px;
-            background: #fafafa;
-            max-height: calc(100vh - 200px);
-        }
-
-        .message {
-            margin-bottom: 15px;
-            padding: 12px 16px;
-            border-radius: 18px;
-            max-width: 80%;
-            word-wrap: break-word;
-            line-height: 1.5;
-        }
-
-        .message h1, .message h2, .message h3 {
-            margin: 12px 0 8px 0;
-            color: inherit;
-        }
-
-        .message h1 {
-            font-size: 1.3em;
-            font-weight: bold;
-        }
-
-        .message h2 {
-            font-size: 1.2em;
-            font-weight: bold;
-        }
-
-        .message h3 {
-            font-size: 1.1em;
-            font-weight: bold;
-        }
-
-        .message strong, .message b {
-            font-weight: bold;
-        }
-
-        .message em, .message i {
-            font-style: italic;
-        }
-
-        .message ul, .message ol {
-            margin: 8px 0;
-            padding-left: 20px;
-        }
-
-        .message li {
-            margin: 4px 0;
-        }
-
-        .message p {
-            margin: 8px 0;
-        }
-
-        .message code {
-            background: rgba(0, 0, 0, 0.1);
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-        }
-
-        .message blockquote {
-            border-left: 4px solid #ccc;
-            margin: 8px 0;
-            padding-left: 12px;
-            color: #666;
-        }
-
-        .message a {
-            color: #3E442B;
-            text-decoration: none;
-        }
-
-        .message a:hover {
-            text-decoration: underline;
-        }
-
-        .user-message {
-            background: #3E442B;
-            color: white;
-            margin-left: auto;
-            text-align: right;
-        }
-
-        .bot-message {
-            background: #e0e0e0;
-            color: #333;
-            margin-right: auto;
-        }
-
-        .loading {
-            background: #e0e0e0;
-            color: #666;
-            margin-right: auto;
-            font-style: italic;
-        }
-
-        .predefined-questions {
-            padding: 10px 15px;
-            background: white;
-            border-top: 1px solid #eee;
-            flex-shrink: 0;
-        }
-
-        .predefined-questions h3 {
-            margin-bottom: 8px;
-            color: #333;
-            font-size: 14px;
-        }
-
-        .question-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-            margin-bottom: 8px;
-        }
-
-        .question-btn {
-            background: #e3f2fd;
-            border: 1px solid #3E442B;
-            color: #3E442B;
-            padding: 6px 10px;
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.3s;
-        }
-
-        .question-btn:hover {
-            background: #3E442B;
-            color: white;
-        }
-
-        .input-section {
-            padding: 15px 20px;
-            background: white;
-            border-top: 1px solid #eee;
-            flex-shrink: 0;
-        }
-
-        .input-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        .message-input {
-            flex: 1;
-            padding: 12px 16px;
-            border: 2px solid #ddd;
-            border-radius: 25px;
-            font-size: 16px;
-            outline: none;
-            transition: border-color 0.3s;
-            resize: none;
-        }
-
-        .message-input:focus {
-            border-color: #3E442B;
-        }
-
-        .send-btn {
-            background: #3E442B;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 16px;
-            transition: background 0.3s;
-        }
-
-        .send-btn:hover {
-            background: #1976D2;
-        }
-
-        .send-btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-
-        .loading-dots {
-            display: inline-block;
-        }
-
-        .start-quiz-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-            transition: background 0.3s;
-        }
-
-        .start-quiz-btn:hover {
-            background: #45a049;
-        }
-
-        .initial-message {
-            text-align: center;
-        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #888; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #555; }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 { font-weight: bold; margin-top: 0.75em; margin-bottom: 0.25em; }
+        .markdown-content h1 { font-size: 1.5em; }
+        .markdown-content h2 { font-size: 1.25em; }
+        .markdown-content h3 { font-size: 1.1em; }
+        .markdown-content ul { list-style-type: disc; padding-left: 1.5em; }
+        .markdown-content ol { list-style-type: decimal; padding-left: 1.5em; }
+        .markdown-content p { margin-bottom: 0.5em; }
+        .markdown-content a { color: #2563eb; text-decoration: underline; }
+        .markdown-content strong { font-weight: bold; }
+        .markdown-content em { font-style: italic; }
+        .markdown-content code { background-color: #e5e7eb; padding: 0.2em 0.4em; border-radius: 3px; font-family: monospace; }
+        .markdown-content blockquote { border-left: 4px solid #d1d5db; padding-left: 1em; margin-left: 0; color: #4b5563; }
+        .mode-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .mode-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
     </style>
 </head>
-<body>
-    <div class="chat-container">
-        <div class="chat-header">
-            <h1>Politisk Parti Chatbot</h1>
-            <p>Spør om politikk fra norske partier</p>
-        </div>
-        
-        <div class="chat-messages" id="chatMessages">
-            <div class="message bot-message initial-message">
-                Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. 
-                Du kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.
-                <br><br>
-                <button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button>
-                <button class="start-quiz-btn" onclick="skipQuiz()" style="margin-left: 10px; background: #FF9800;">Skip Quiz</button>
+<body class="h-full flex flex-col">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Politisk Parti Chatbot</h1>
+                <p class="text-sm text-gray-500">Spør om politikk, eller ta quizen for å finne din match</p>
             </div>
-        </div>
-
-        <div class="predefined-questions" id="predefinedQuestions" style="display: none;">
-            <h3>Eksempel spørsmål:</h3>
-            <div class="question-buttons">
-            </div>
-        </div>
-
-        <div class="input-section" id="chatInputSection">
-            <div class="input-container">
-                <input type="text" 
-                       id="messageInput" 
-                       class="message-input" 
-                       placeholder="Skriv ditt spørsmål her..."
-                       onkeypress="handleKeyPress(event)">
-                <button id="sendBtn" class="send-btn" onclick="sendMessage()">
-                    Send
+            <div class="flex items-center space-x-4">
+                <a href="/about" class="text-sm font-medium text-gray-600 hover:text-gray-900">Om appen</a>
+                <button id="backToMenuBtn" onclick="showModeSelection()" class="hidden bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
+                    Tilbake til menyen
                 </button>
             </div>
         </div>
+    </header>
 
-        <div class="input-section" id="quizInputSection" style="display: none;">
-            <div class="input-container">
-                <input type="text" 
-                       id="quizAnswerInput" 
-                       class="message-input" 
-                       placeholder="Skriv ditt svar her..."
-                       onkeypress="handleQuizKeyPress(event)">
-                <button id="submitQuizAnswerBtn" class="send-btn" onclick="submitQuizAnswer()">
-                    Svar
-                </button>
+    <div id="appContainer" class="flex-1 flex max-h-[calc(100vh-76px)]">
+        <!-- Mode Selection -->
+        <div id="modeSelection" class="flex-1 flex items-center justify-center p-8 bg-gray-50">
+            <div class="w-full max-w-4xl mx-auto">
+                <h2 class="text-3xl font-bold text-center text-gray-800 mb-8">Hva vil du gjøre?</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Quiz Card -->
+                    <div onclick="selectMode('quiz')" class="mode-card cursor-pointer bg-white rounded-lg shadow p-8 flex flex-col items-center text-center">
+                        <svg class="h-16 w-16 text-blue-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Ta den politiske quizen</h3>
+                        <p class="text-gray-600">Svar på 5 spørsmål og finn ut hvilket parti som matcher dine meninger best.</p>
+                    </div>
+                    <!-- Chat Card -->
+                    <div onclick="selectMode('chat')" class="mode-card cursor-pointer bg-white rounded-lg shadow p-8 flex flex-col items-center text-center">
+                        <svg class="h-16 w-16 text-amber-500 mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+                        </svg>
+                        <h3 class="text-xl font-semibold text-gray-900 mb-2">Spør om partiprogrammer</h3>
+                        <p class="text-gray-600">Still spørsmål direkte til partiprogrammene. Sammenlign partier på saker som er viktige for deg.</p>
+                    </div>
+                </div>
             </div>
         </div>
+
+        <!-- Main Chat Area -->
+        <main id="chatInterface" class="flex-1 flex-col hidden">
+            <div id="chatMessages" class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+                <!-- Messages will be dynamically added here -->
+            </div>
+
+            <!-- Predefined Questions -->
+            <div id="predefinedQuestions" class="p-4 bg-gray-50 border-t border-gray-200">
+                <h3 class="text-sm font-medium text-gray-600 mb-2">Forslag:</h3>
+                <div id="questionButtons" class="flex flex-wrap gap-2">
+                    <!-- Buttons will be populated by JS -->
+                </div>
+            </div>
+
+            <!-- Input Section -->
+            <div id="chatInputSection" class="p-4 bg-white border-t border-gray-200">
+                <div class="flex items-center space-x-3">
+                    <input type="text" id="messageInput" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Skriv ditt spørsmål her..." onkeypress="handleKeyPress(event)">
+                    <button id="sendBtn" onclick="sendMessage()" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Send
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Quiz Input Section -->
+            <div id="quizInputSection" class="p-4 bg-white border-t border-gray-200" style="display: none;">
+                <div class="flex items-center space-x-3">
+                    <input type="text" id="quizAnswerInput" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Skriv ditt svar her..." onkeypress="handleQuizKeyPress(event)">
+                    <button id="submitQuizAnswerBtn" onclick="submitQuizAnswer()" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Svar
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script>
+        const modeSelection = document.getElementById('modeSelection');
+        const chatInterface = document.getElementById('chatInterface');
+        const backToMenuBtn = document.getElementById('backToMenuBtn');
+        
         const chatMessages = document.getElementById('chatMessages');
         const messageInput = document.getElementById('messageInput');
         const sendBtn = document.getElementById('sendBtn');
         const predefinedQuestionsDiv = document.getElementById('predefinedQuestions');
+        const questionButtons = document.getElementById('questionButtons');
         const chatInputSection = document.getElementById('chatInputSection');
         const quizInputSection = document.getElementById('quizInputSection');
         const quizAnswerInput = document.getElementById('quizAnswerInput');
         const submitQuizAnswerBtn = document.getElementById('submitQuizAnswerBtn');
+
         let isLoading = false;
         let currentQuestion = '';
         let questionNumber = 0;
-        const totalQuestions = 5; // Define total questions for the quiz
+        const totalQuestions = 5;
 
         function formatText(text) {
-            return marked.parse(text);
+            const rawHtml = marked.parse(text);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = rawHtml;
+            
+            tempDiv.querySelectorAll('h1').forEach(el => el.classList.add('text-xl', 'font-bold', 'my-2'));
+            tempDiv.querySelectorAll('h2').forEach(el => el.classList.add('text-lg', 'font-semibold', 'my-2'));
+            tempDiv.querySelectorAll('h3').forEach(el => el.classList.add('text-base', 'font-semibold', 'my-1'));
+            tempDiv.querySelectorAll('ul').forEach(el => el.classList.add('list-disc', 'pl-5', 'mb-2'));
+            tempDiv.querySelectorAll('ol').forEach(el => el.classList.add('list-decimal', 'pl-5', 'mb-2'));
+            tempDiv.querySelectorAll('p').forEach(el => el.classList.add('mb-2'));
+            tempDiv.querySelectorAll('a').forEach(el => el.classList.add('text-blue-600', 'hover:underline'));
+            tempDiv.querySelectorAll('blockquote').forEach(el => el.classList.add('border-l-4', 'border-gray-300', 'pl-4', 'italic', 'text-gray-600'));
+            tempDiv.querySelectorAll('code').forEach(el => el.classList.add('bg-gray-200', 'text-sm', 'rounded', 'px-1', 'py-0.5'));
+
+            return tempDiv.innerHTML;
         }
 
-        function addMessage(message, isUser = false) {
+        function addMessage(message, isUser = false, isHtml = false) {
+            const messageWrapper = document.createElement('div');
+            messageWrapper.className = `flex mb-4 ${isUser ? 'justify-end' : 'justify-start'}`;
+
             const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+            messageDiv.className = `rounded-lg px-4 py-2 max-w-4xl ${isUser ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-800'}`;
             
-            if (isUser) {
-                messageDiv.textContent = message; // Don't format user messages
+            if (isHtml) {
+                messageDiv.innerHTML = message;
             } else {
-                messageDiv.innerHTML = formatText(message); // Format bot messages
+                messageDiv.textContent = message;
             }
             
-            chatMessages.appendChild(messageDiv);
+            messageWrapper.appendChild(messageDiv);
+            chatMessages.appendChild(messageWrapper);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
         function showLoading() {
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'message loading';
-            loadingDiv.id = 'loadingMessage';
-            loadingDiv.innerHTML = 'Tenker<span class="loading-dots"></span>';
-            chatMessages.appendChild(loadingDiv);
+            const loadingWrapper = document.createElement('div');
+            loadingWrapper.id = 'loadingMessage';
+            loadingWrapper.className = 'flex justify-start mb-4';
+            loadingWrapper.innerHTML = `
+                <div class="rounded-lg px-4 py-2 max-w-lg bg-gray-200 text-gray-500 italic">
+                    Tenker<span class="animate-pulse">...</span>
+                </div>
+            `;
+            chatMessages.appendChild(loadingWrapper);
             chatMessages.scrollTop = chatMessages.scrollHeight;
         }
 
@@ -358,72 +185,81 @@
             isLoading = loading;
             sendBtn.disabled = loading;
             messageInput.disabled = loading;
-            sendBtn.textContent = loading ? 'Venter...' : 'Send';
             submitQuizAnswerBtn.disabled = loading;
             quizAnswerInput.disabled = loading;
-            submitQuizAnswerBtn.textContent = loading ? 'Venter...' : 'Svar';
+
+            if (loading) {
+                sendBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                submitQuizAnswerBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                sendBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                submitQuizAnswerBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        function showModeSelection() {
+            modeSelection.style.display = 'flex';
+            chatInterface.style.display = 'none';
+            backToMenuBtn.classList.add('hidden');
+        }
+
+        function selectMode(mode) {
+            modeSelection.style.display = 'none';
+            chatInterface.style.display = 'flex';
+            backToMenuBtn.classList.remove('hidden');
+            chatMessages.innerHTML = ''; // Clear previous messages
+
+            if (mode === 'quiz') {
+                startQuiz();
+            } else if (mode === 'chat') {
+                showChatMode();
+            }
         }
 
         async function sendMessage() {
             const message = messageInput.value.trim();
             if (!message || isLoading) return;
 
-            // Add user message
             addMessage(message, true);
             messageInput.value = '';
 
-            // Show loading
             setLoading(true);
             showLoading();
 
             try {
                 const response = await fetch('/chat', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ message: message })
                 });
-
                 const data = await response.json();
-                
+                hideLoading();
                 if (data.error) {
                     addMessage(`Feil: ${data.error}`);
                 } else {
-                    addMessage(data.response);
+                    addMessage(formatText(data.response), false, true);
                 }
             } catch (error) {
+                hideLoading();
                 addMessage('Beklager, det oppstod en feil. Prøv igjen senere.');
                 console.error('Error:', error);
             } finally {
-                hideLoading();
                 setLoading(false);
                 messageInput.focus();
             }
         }
 
         async function startQuiz() {
-            chatMessages.innerHTML = ''; // Clear chat messages
-            addMessage('Velkommen til den politiske quizen! Jeg vil stille deg 5 spørsmål for å finne ut hvilket parti du er mest enig med.');
+            addMessage('Velkommen til quizen! Jeg stiller 5 spørsmål for å finne din politiske match.', false, true);
             setLoading(true);
             showLoading();
 
             try {
-                const response = await fetch('/start_quiz', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                const data = await response.json();
-                if (data.error) {
-                    addMessage(`Feil: ${data.error}`);
-                } else {
-                    chatInputSection.style.display = 'none';
-                    predefinedQuestionsDiv.style.display = 'none';
-                    quizInputSection.style.display = 'block';
-                    getQuestion();
-                }
+                await fetch('/start_quiz', { method: 'POST' });
+                chatInputSection.style.display = 'none';
+                predefinedQuestionsDiv.style.display = 'none';
+                quizInputSection.style.display = 'flex';
+                getQuestion();
             } catch (error) {
                 addMessage('Beklager, kunne ikke starte quizen.');
                 console.error('Error starting quiz:', error);
@@ -433,12 +269,9 @@
             }
         }
 
-        async function skipQuiz() {
-            chatMessages.innerHTML = ''; // Clear chat messages
-            addMessage('Du hoppet over quizen. Du kan nå spørre meg direkte om hva norske partier mener om ulike politiske spørsmål.');
-            
-            // Show chat interface
-            chatInputSection.style.display = 'block';
+        function showChatMode() {
+            addMessage('Still meg et spørsmål om norsk politikk! Du kan spørre om ett parti, eller sammenligne flere.', false, true);
+            chatInputSection.style.display = 'flex';
             predefinedQuestionsDiv.style.display = 'block';
             quizInputSection.style.display = 'none';
             messageInput.focus();
@@ -450,29 +283,28 @@
             try {
                 const response = await fetch('/get_question');
                 const data = await response.json();
+                hideLoading();
 
                 if (data.error) {
                     addMessage(`Feil: ${data.error}`);
-                    setLoading(false);
-                    hideLoading();
                     return;
                 }
 
                 if (data.question === 'QUIZ_COMPLETE') {
-                    addMessage('Du har svart på alle spørsmålene. Finner din match...');
+                    addMessage('Takk for svarene! Analyserer resultatet...', false, true);
                     getMatch();
                 } else {
                     currentQuestion = data.question;
                     questionNumber = data.question_number;
-                    addMessage(`Spørsmål ${questionNumber} av ${totalQuestions}: ${currentQuestion}`);
+                    addMessage(`<b>Spørsmål ${questionNumber}/${totalQuestions}:</b> ${currentQuestion}`, false, true);
                     quizAnswerInput.value = '';
                     quizAnswerInput.focus();
                 }
             } catch (error) {
+                hideLoading();
                 addMessage('Beklager, kunne ikke hente spørsmål.');
                 console.error('Error getting question:', error);
             } finally {
-                hideLoading();
                 setLoading(false);
             }
         }
@@ -486,25 +318,18 @@
             showLoading();
 
             try {
-                const response = await fetch('/submit_answer', {
+                await fetch('/submit_answer', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ question: currentQuestion, answer: answer })
                 });
-                const data = await response.json();
-                if (data.error) {
-                    addMessage(`Feil: ${data.error}`);
-                } else {
-                    getQuestion(); // Get next question or finish quiz
-                }
+                hideLoading();
+                getQuestion();
             } catch (error) {
+                hideLoading();
                 addMessage('Beklager, kunne ikke sende svar.');
                 console.error('Error submitting answer:', error);
-            }
- finally {
-                hideLoading();
+            } finally {
                 setLoading(false);
             }
         }
@@ -515,22 +340,24 @@
             try {
                 const response = await fetch('/get_match');
                 const data = await response.json();
+                hideLoading();
 
                 if (data.error) {
                     addMessage(`Feil: ${data.error}`);
                 } else {
-                    addMessage(`**Resultat:**\n\n${data.match_result}`);
-                    // Reset UI to chat mode
-                    chatInputSection.style.display = 'block';
-                    predefinedQuestionsDiv.style.display = 'block';
-                    quizInputSection.style.display = 'none';
-                    messageInput.focus();
+                    addMessage(formatText(data.match_result), false, true);
                 }
+                // After match, show a summary and then offer to go back to menu
+                addMessage("<b>Quizen er ferdig.</b> Du kan nå gå tilbake til hovedmenyen for å starte en ny chat eller ta quizen på nytt.", false, true);
+                quizInputSection.style.display = 'none';
+                chatInputSection.style.display = 'none';
+                predefinedQuestionsDiv.style.display = 'none';
+
             } catch (error) {
+                hideLoading();
                 addMessage('Beklager, kunne ikke finne din match.');
                 console.error('Error getting match:', error);
             } finally {
-                hideLoading();
                 setLoading(false);
             }
         }
@@ -554,56 +381,36 @@
             }
         }
 
-        async function loadPartiesAndInitialMessage() {
+        async function loadInitialData() {
             try {
                 const response = await fetch('/parties');
                 const data = await response.json();
-                const parties = data.parties;
-
-                // Update initial bot message
-                const initialBotMessageDiv = document.querySelector('.chat-messages .initial-message');
-                if (initialBotMessageDiv) {
-                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg om ${parties.join(', ')}, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button><button class="start-quiz-btn" onclick="skipQuiz()" style="margin-left: 10px; background: #FF9800;">Skip Quiz</button>`);
-                }
-
-                // Generate predefined questions
-                const questionButtonsDiv = predefinedQuestionsDiv.querySelector('.question-buttons');
-                questionButtonsDiv.innerHTML = ''; // Clear existing buttons
                 
-                // Static predefined questions covering different topics
+                // Generate predefined questions
+                questionButtons.innerHTML = '';
                 const staticQuestions = [
-                    "Hva mener Arbeiderpartiet om skatt?",
-                    "Hva er Høyres politikk på innvandring?",
-                    "Hva mener FrP om miljø?",
-                    "Hva er SV sin politikk på familie?",
-                    "Hva mener MDG om utdanning?",
-                    "Hva er KrFs politikk på helse?",
-                    "Hva mener Venstre om bolig?",
-                    "Hva er Senterpartiets politikk på transport?"
+                    "Hva mener partiene om formueskatt?",
+                    "Hvordan stiller de ulike partiene seg til oljeboring?",
+                    "Hva er innvandringspolitikken til de største partiene?",
+                    "Sammenlign helsepolitikken til Ap og Høyre."
                 ];
 
                 staticQuestions.forEach(question => {
                     const button = document.createElement('button');
-                    button.className = 'question-btn';
+                    button.className = 'bg-gray-200 text-gray-700 px-3 py-1 rounded-full text-sm hover:bg-gray-300';
                     button.textContent = question;
                     button.onclick = () => sendPredefinedQuestion(question);
-                    questionButtonsDiv.appendChild(button);
+                    questionButtons.appendChild(button);
                 });
 
             } catch (error) {
-                console.error('Error loading parties:', error);
-                // Fallback to default message if parties cannot be loaded
-                const initialBotMessageDiv = document.querySelector('.chat-messages .initial-message');
-                if (initialBotMessageDiv) {
-                    initialBotMessageDiv.innerHTML = formatText(`Hei! Jeg kan hjelpe deg med å finne ut hva norske partier mener om ulike politiske spørsmål. \nDu kan spørre meg direkte, eller ta en quiz for å finne ut hvilket parti du er mest enig med.\n\n<button class="start-quiz-btn" onclick="startQuiz()">Start Quiz</button><button class="start-quiz-btn" onclick="skipQuiz()" style="margin-left: 10px; background: #FF9800;">Skip Quiz</button>`);
-                }
+                console.error('Error loading initial data:', error);
             }
         }
 
-        // Focus on input and load parties when page loads
         window.addEventListener('load', () => {
-            messageInput.focus();
-            loadPartiesAndInitialMessage();
+            showModeSelection();
+            loadInitialData();
         });
     </script>
 </body>
