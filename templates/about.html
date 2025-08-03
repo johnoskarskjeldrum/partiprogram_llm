@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="no" class="h-full bg-gray-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Om Appen - Politisk Parti Chatbot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-full flex flex-col">
+    <header class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Politisk Parti Chatbot</h1>
+                <p class="text-sm text-gray-500">Spør om politikk, eller ta quizen for å finne din match</p>
+            </div>
+            <a href="/" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">
+                Tilbake til hovedsiden
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-1 py-10">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 bg-white rounded-lg shadow p-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-4">Om applikasjonen</h2>
+            
+            <div class="prose prose-lg max-w-none text-gray-700">
+                <p>
+                    Denne applikasjonen er laget for å gjøre det enklere å utforske og sammenligne politiske partiprogrammer i Norge. Målet er å gi deg et verktøy for å raskt kunne sette deg inn i hva de ulike partiene mener om saker som er viktige for deg.
+                </p>
+
+                <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-2">Hvordan fungerer det?</h3>
+                <p>
+                    Appen bruker avansert teknologi kjent som <strong>store språkmodeller (LLMs)</strong>, levert av Google Gemini. Slik fungerer prosessen i enkle trinn:
+                </p>
+                <ol class="list-decimal pl-5">
+                    <li><strong>Innlasting av data:</strong> Først leser vi inn de offisielle partiprogrammene fra de ulike politiske partiene. Disse lagres i appens minne.</li>
+                    <li><strong>Din forespørsel:</strong> Når du stiller et spørsmål, som for eksempel "Hva mener partiene om skatt?", analyserer systemet spørsmålet ditt.</li>
+                    <li><strong>Analyse med språkmodellen:</strong> Spørsmålet ditt, sammen med relevante utdrag fra partiprogrammene, sendes til en språkmodell. Modellen får i oppgave å lese og forstå informasjonen, og deretter formulere et nøytralt og informativt svar basert utelukkende på teksten fra partiprogrammene.</li>
+                    <li><strong>Sammenligning:</strong> Hvis du spør om flere partier, eller stiller et generelt spørsmål, vil modellen sammenligne standpunktene og presentere dem på en oversiktlig måte.</li>
+                </ol>
+
+                <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-2">Viktig å vite!</h3>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-4">
+                    <p class="font-bold text-yellow-800">Språkmodeller kan gjøre feil.</p>
+                    <p class="text-yellow-700">
+                        Selv om teknologien er avansert, er den ikke feilfri. Språkmodeller kan noen ganger misforstå, feiltolke eller hallusinere (finne på) informasjon. Svarene som gis er ment som en veiledning og et utgangspunkt for å forstå partienes politikk. For å være helt sikker på et partis standpunkt, anbefaler vi alltid å sjekke direkte i partiprogrammet på partiets egne nettsider.
+                    </p>
+                </div>
+
+                <h3 class="text-xl font-semibold text-gray-900 mt-6 mb-2">Hvem har laget appen?</h3>
+                <p>
+                    <!-- Her kan du/dere legge inn informasjon om hvem som står bak -->
+                    Denne applikasjonen er utviklet av [Ditt Navn/Deres Navn]. Vi er en gruppe [studenter/utviklere/entusiaster] med en lidenskap for [teknologi/politikk/samfunn].
+                    <br>
+                    Du kan kontakte oss på [din e-post/nettside].
+                </p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
