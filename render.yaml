@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: partiprogram-llm
+    env: python
+    region: frankfurt  # Choose closest to Norway
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false  # Set this manually in Render dashboard
+      - key: FLASK_SECRET_KEY
+        generateValue: true  # Auto-generate secure key
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 8080
+    autoDeploy: true
+    # No persistent disk needed - cache is now in git repository

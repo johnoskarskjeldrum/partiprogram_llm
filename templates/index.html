@@ -24,6 +24,11 @@
         .markdown-content blockquote { border-left: 4px solid #d1d5db; padding-left: 1em; margin-left: 0; color: #4b5563; }
         .mode-card { transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
         .mode-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .auto-resize { resize: none; overflow: hidden; }
+        .input-container { position: relative; }
+        .char-counter { font-size: 0.75rem; color: #6b7280; position: absolute; bottom: -18px; right: 0; }
+        .send-button { transition: all 0.2s ease-in-out; }
+        .send-button:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
     </style>
 </head>
 <body class="h-full flex flex-col">
@@ -70,35 +75,59 @@
 
         <!-- Main Chat Area -->
         <main id="chatInterface" class="flex-1 flex-col hidden">
-            <div id="chatMessages" class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+            <div id="chatMessages" class="flex-1 p-6 overflow-y-auto custom-scrollbar max-w-5xl mx-auto w-full">
                 <!-- Messages will be dynamically added here -->
             </div>
 
             <!-- Predefined Questions -->
             <div id="predefinedQuestions" class="p-4 bg-gray-50 border-t border-gray-200">
-                <h3 class="text-sm font-medium text-gray-600 mb-2">Forslag:</h3>
-                <div id="questionButtons" class="flex flex-wrap gap-2">
-                    <!-- Buttons will be populated by JS -->
+                <div class="max-w-5xl mx-auto w-full">
+                    <h3 class="text-sm font-medium text-gray-600 mb-2">Forslag:</h3>
+                    <div id="questionButtons" class="flex flex-wrap gap-2">
+                        <!-- Buttons will be populated by JS -->
+                    </div>
                 </div>
             </div>
 
             <!-- Input Section -->
-            <div id="chatInputSection" class="p-4 bg-white border-t border-gray-200">
-                <div class="flex items-center space-x-3">
-                    <input type="text" id="messageInput" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Skriv ditt spørsmål her..." onkeypress="handleKeyPress(event)">
-                    <button id="sendBtn" onclick="sendMessage()" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Send
-                    </button>
+            <div id="chatInputSection" class="p-6 bg-white border-t border-gray-200">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="input-container">
+                        <div class="flex items-end space-x-4">
+                            <div class="flex-1">
+                                <label for="messageInput" class="block text-sm font-medium text-gray-700 mb-2">Skriv ditt spørsmål:</label>
+                                <textarea id="messageInput" rows="3" class="auto-resize block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-4 py-3 placeholder-gray-400" placeholder="Still et spørsmål om norsk politikk. Du kan spørre om ett parti eller sammenligne flere partier på et tema..." onkeypress="handleKeyPress(event)" oninput="autoResize(this); updateCharCount('messageInput', 'chatCharCount')"></textarea>
+                                <div id="chatCharCount" class="char-counter">0 tegn</div>
+                            </div>
+                            <button id="sendBtn" onclick="sendMessage()" class="send-button inline-flex items-center justify-center rounded-lg border border-transparent bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-w-[100px] h-fit">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                </svg>
+                                Send
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
             <!-- Quiz Input Section -->
-            <div id="quizInputSection" class="p-4 bg-white border-t border-gray-200" style="display: none;">
-                <div class="flex items-center space-x-3">
-                    <input type="text" id="quizAnswerInput" class="flex-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Skriv ditt svar her..." onkeypress="handleQuizKeyPress(event)">
-                    <button id="submitQuizAnswerBtn" onclick="submitQuizAnswer()" class="inline-flex items-center justify-center rounded-md border border-transparent bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
-                        Svar
-                    </button>
+            <div id="quizInputSection" class="p-6 bg-white border-t border-gray-200" style="display: none;">
+                <div class="max-w-5xl mx-auto w-full">
+                    <div class="input-container">
+                        <div class="flex items-end space-x-4">
+                            <div class="flex-1">
+                                <label for="quizAnswerInput" class="block text-sm font-medium text-gray-700 mb-2">Ditt svar:</label>
+                                <textarea id="quizAnswerInput" rows="3" class="auto-resize block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-4 py-3 placeholder-gray-400" placeholder="Skriv et utfyllende svar på spørsmålet. Jo mer detaljert, jo bedre match får du..." onkeypress="handleQuizKeyPress(event)" oninput="autoResize(this); updateCharCount('quizAnswerInput', 'quizCharCount')"></textarea>
+                                <div id="quizCharCount" class="char-counter">0 tegn</div>
+                            </div>
+                            <button id="submitQuizAnswerBtn" onclick="submitQuizAnswer()" class="send-button inline-flex items-center justify-center rounded-lg border border-transparent bg-blue-600 px-6 py-3 text-base font-medium text-white shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 min-w-[100px] h-fit">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                Svar
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -222,6 +251,8 @@
 
             addMessage(message, true);
             messageInput.value = '';
+            autoResize(messageInput);
+            updateCharCount('messageInput', 'chatCharCount');
 
             setLoading(true);
             showLoading();
@@ -274,6 +305,7 @@
             chatInputSection.style.display = 'flex';
             predefinedQuestionsDiv.style.display = 'block';
             quizInputSection.style.display = 'none';
+            updateCharCount('messageInput', 'chatCharCount');
             messageInput.focus();
         }
 
@@ -298,6 +330,8 @@
                     questionNumber = data.question_number;
                     addMessage(`<b>Spørsmål ${questionNumber}/${totalQuestions}:</b> ${currentQuestion}`, false, true);
                     quizAnswerInput.value = '';
+                    autoResize(quizAnswerInput);
+                    updateCharCount('quizAnswerInput', 'quizCharCount');
                     quizAnswerInput.focus();
                 }
             } catch (error) {
@@ -314,6 +348,9 @@
             if (!answer || isLoading) return;
 
             addMessage(answer, true);
+            quizAnswerInput.value = '';
+            autoResize(quizAnswerInput);
+            updateCharCount('quizAnswerInput', 'quizCharCount');
             setLoading(true);
             showLoading();
 
@@ -365,6 +402,27 @@
         function sendPredefinedQuestion(question) {
             messageInput.value = question;
             sendMessage();
+        }
+
+        function autoResize(textarea) {
+            textarea.style.height = 'auto';
+            textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
+        }
+
+        function updateCharCount(inputId, counterId) {
+            const input = document.getElementById(inputId);
+            const counter = document.getElementById(counterId);
+            const count = input.value.length;
+            counter.textContent = `${count} tegn`;
+            
+            // Color coding for length
+            if (count > 500) {
+                counter.style.color = '#dc2626'; // red
+            } else if (count > 300) {
+                counter.style.color = '#d97706'; // orange
+            } else {
+                counter.style.color = '#6b7280'; // gray
+            }
         }
 
         function handleKeyPress(event) {

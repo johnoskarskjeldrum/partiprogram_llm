@@ -3,3 +3,5 @@
 __pycache__
 .DS_Store
 tools
+
+# Note: cache/ directory is now included in git for faster deployments
