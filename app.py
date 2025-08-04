@@ -3,7 +3,7 @@ import os
 import google.generativeai as genai
 from dotenv import load_dotenv
 import re
-from utils import load_all_party_programs
+from utils import load_all_party_programs, PartyProgramCache, load_all_party_programs_cached
 from fuzzywuzzy import fuzz, process
 
 load_dotenv()
@@ -18,14 +18,31 @@ if api_key:
     genai.configure(api_key=api_key)
     model = genai.GenerativeModel('gemini-1.5-flash')
 
-# Cache for party programs
-party_programs = {}
+# Lazy-loading cache for party programs
+party_cache = PartyProgramCache()
+party_programs = {}  # Keep for compatibility, populated on-demand
 
-def load_party_programs_into_cache():
-    """Load all party programs into the global cache."""
+def get_party_program(party_name):
+    """Get a party program with lazy loading."""
     global party_programs
-    party_programs_dir = "./partiprogram"
-    party_programs = load_all_party_programs(party_programs_dir)
+    if party_name not in party_programs:
+        content = party_cache.get_program(party_name)
+        if content:
+            party_programs[party_name] = content
+    return party_programs.get(party_name)
+
+def get_all_party_programs():
+    """Get all party programs, loading them lazily."""
+    global party_programs
+    available_programs = party_cache.get_available_programs()
+    
+    for party_name in available_programs:
+        if party_name not in party_programs:
+            content = party_cache.get_program(party_name)
+            if content:
+                party_programs[party_name] = content
+    
+    return party_programs
 
 
 def detect_parties_from_message(message):
@@ -39,9 +56,10 @@ def detect_parties_from_message(message):
         print("DEBUG: Generic party term found, returning no specific parties.")
         return []
 
-    # Create comprehensive party name mappings from loaded programs
+    # Create comprehensive party name mappings from available programs
     party_name_mappings = {}
-    for filename_key in party_programs.keys():
+    available_programs = party_cache.get_available_programs()
+    for filename_key in available_programs:
         # Extract common names from filenames based on actual files in partiprogram folder
         if "arbeiderpartiets" in filename_key:
             party_name_mappings['arbeiderpartiet'] = filename_key
@@ -383,7 +401,7 @@ def get_match():
     if "Error" in user_stance_summary or "Kunne ikke oppsummere" in user_stance_summary:
         return jsonify({'error': user_stance_summary}), 500
 
-    match_result = match_user_to_party(user_stance_summary, party_programs)
+    match_result = match_user_to_party(user_stance_summary, get_all_party_programs())
     if "Error" in match_result or "Kunne ikke finne en match" in match_result:
         return jsonify({'error': match_result}), 500
 
@@ -410,12 +428,13 @@ def chat():
         if not detected_parties:
             # If no specific party is detected, assume the user is asking about all parties
             print("DEBUG: No specific party detected. Assuming a general question for all parties.")
-            party_data = party_programs
-            detected_parties = list(party_programs.keys()) # For the response JSON
+            party_data = get_all_party_programs()
+            detected_parties = list(party_data.keys()) # For the response JSON
         else:
             for party_file in detected_parties:
-                if party_file in party_programs:
-                    party_data[party_file] = party_programs[party_file]
+                content = get_party_program(party_file)
+                if content:
+                    party_data[party_file] = content
                 else:
                     # This case should ideally not be hit if detection is accurate
                     return jsonify({
@@ -443,7 +462,7 @@ def get_parties():
     """Get list of available parties."""
     # Return a more user-friendly list of party names based on actual files
     user_friendly_party_names = []
-    for filename_key in party_programs.keys():
+    for filename_key in party_cache.get_available_programs():
         if "arbeiderpartiets" in filename_key:
             user_friendly_party_names.append('Arbeiderpartiet')
         elif "høyre" in filename_key:
@@ -486,8 +505,8 @@ def get_parties():
 def debug_parties():
     """Debug endpoint to see what party programs are loaded."""
     return jsonify({
-        'loaded_parties': list(party_programs.keys()),
-        'party_count': len(party_programs)
+        'loaded_parties': party_cache.get_available_programs(),
+        'party_count': len(party_cache.get_available_programs())
     })
 
 @app.route('/debug/mappings')
@@ -495,7 +514,7 @@ def debug_mappings():
     """Debug endpoint to see party name mappings."""
     # Create the same mappings as in detect_party_from_message
     party_name_mappings = {}
-    for filename_key in party_programs.keys():
+    for filename_key in party_cache.get_available_programs():
         if "arbeiderpartiets" in filename_key:
             party_name_mappings['arbeiderpartiet'] = filename_key
             party_name_mappings['ap'] = filename_key
@@ -573,5 +592,19 @@ def debug_mappings():
     })
 
 if __name__ == '__main__':
-    load_party_programs_into_cache()
-    app.run(debug=True, port=8080, host='0.0.0.0')
+    # Check if cache is available, show helpful message if not
+    if not party_cache.is_cache_available():
+        print("⚠️  Party program cache not found!")
+        print("   Run 'python preprocess_programs.py' to build cache for faster loading")
+        print("   Starting with fallback loading (this will be slower)...")
+    else:
+        available_count = len(party_cache.get_available_programs())
+        print(f"✅ Found cached party programs ({available_count} programs)")
+    
+    # Production-ready configuration
+    import os
+    port = int(os.environ.get('PORT', 8080))
+    debug = os.environ.get('FLASK_ENV') != 'production'
+    
+    print(f"🚀 Starting server on port {port} (debug={'on' if debug else 'off'})")
+    app.run(debug=debug, port=port, host='0.0.0.0')
