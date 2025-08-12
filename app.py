@@ -194,10 +194,9 @@ def extract_relevant_content(party_text, question):
     # Fallback to first 20000 characters if no relevant sections found
     return party_text[:20000]
 
-def generate_political_question(existing_questions):
+def generate_political_question(existing_questions, model_instance):
     """Generates a new, open-ended political question using Gemini, avoiding previously asked questions."""
-    global model
-    if not model:
+    if not model_instance:
         return "Error: Gemini model not configured."
 
     prompt = f"""Du er en nøytral spørsmålsstiller for en politisk quiz. Generer ett nytt, åpent spørsmål om norsk politikk. Spørsmålet skal være generelt nok til at alle partier kan ha en mening om det, men spesifikt nok til å avdekke politiske standpunkter. Unngå spørsmål som kan besvares med et enkelt 'ja' eller 'nei'. Spørsmålet skal være på norsk.
@@ -213,16 +212,15 @@ Eksempel på gode spørsmål:
 Generer kun spørsmålet, ingen annen tekst.
 """
     try:
-        response = model.generate_content(prompt)
+        response = model_instance.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
         print(f"Error generating question: {e}")
         return "Kunne ikke generere et nytt spørsmål akkurat nå. Prøv igjen."
 
-def summarize_user_stance(user_answers):
+def summarize_user_stance(user_answers, model_instance):
     """Summarizes the user's political stance based on their answers using Gemini."""
-    global model
-    if not model:
+    if not model_instance:
         return "Error: Gemini model not configured."
 
     answers_text = "\n".join([f"- Spørsmål: {q}\n  Svar: {a}" for q, a in user_answers.items()])
@@ -235,16 +233,15 @@ Brukerens svar:
 Oppsummering av brukerens politiske standpunkt:
 """
     try:
-        response = model.generate_content(prompt)
+        response = model_instance.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
         print(f"Error summarizing user stance: {e}")
         return "Kunne ikke oppsummere dine standpunkter akkurat nå."
 
-def match_user_to_party(user_stance_summary, party_programs):
+def match_user_to_party(user_stance_summary, party_programs, model_instance):
     """Compares the user's political stance to party programs and finds the best match using Gemini."""
-    global model
-    if not model:
+    if not model_instance:
         return "Error: Gemini model not configured."
 
     party_programs_text = ""
@@ -269,16 +266,15 @@ Instruksjoner:
 - Deretter følger en begrunnelse.
 """
     try:
-        response = model.generate_content(prompt)
+        response = model_instance.generate_content(prompt)
         return response.text.strip()
     except Exception as e:
         print(f"Error matching user to party: {e}")
         return "Kunne ikke finne en match akkurat nå."
 
-def answer_question_with_gemini(question, party_data):
+def answer_question_with_gemini(question, party_data, model_instance):
     """Use Gemini to answer a question about one or more parties."""
-    global model
-    if not model:
+    if not model_instance:
         return "Error: Gemini model not configured. GEMINI_API_KEY might be missing or invalid."
 
     if len(party_data) == 1:
@@ -328,7 +324,7 @@ Instruksjoner:
 - Svar på norsk med en profesjonell og nøytral tone."""
 
     try:
-        response = model.generate_content(prompt)
+        response = model_instance.generate_content(prompt)
         return response.text
     except Exception as e:
         return f"An error occurred: {e}"
@@ -343,6 +339,13 @@ def about():
 
 @app.route('/start_quiz', methods=['POST'])
 def start_quiz():
+    data = request.json
+    gemini_api_key = data.get('gemini_api_key')
+    if gemini_api_key:
+        session['gemini_api_key'] = gemini_api_key
+    else:
+        session.pop('gemini_api_key', None) # Remove key if not provided
+
     session['user_answers'] = {}
     session['question_count'] = 0
     session['asked_questions'] = []
@@ -360,7 +363,17 @@ def get_question():
     if question_count >= 5: # Ask 5 questions for the quiz
         return jsonify({'question': 'QUIZ_COMPLETE'})
 
-    question = generate_political_question(asked_questions)
+    # Get model for this request
+    local_model = model
+    gemini_api_key = session.get('gemini_api_key')
+    if gemini_api_key:
+        try:
+            genai.configure(api_key=gemini_api_key)
+            local_model = genai.GenerativeModel('gemini-1.5-flash')
+        except Exception as e:
+            return jsonify({'error': f"Invalid Gemini API Key: {e}"}), 400
+
+    question = generate_political_question(asked_questions, local_model)
     if "Error" in question or "Kunne ikke generere" in question:
         return jsonify({'error': question}), 500
     
@@ -397,11 +410,21 @@ def get_match():
     if len(user_answers) < 5: # Ensure all questions are answered
         return jsonify({'error': 'Please answer all questions before getting a match.'}), 400
 
-    user_stance_summary = summarize_user_stance(user_answers)
+    # Get model for this request
+    local_model = model
+    gemini_api_key = session.get('gemini_api_key')
+    if gemini_api_key:
+        try:
+            genai.configure(api_key=gemini_api_key)
+            local_model = genai.GenerativeModel('gemini-1.5-flash')
+        except Exception as e:
+            return jsonify({'error': f"Invalid Gemini API Key: {e}"}), 400
+
+    user_stance_summary = summarize_user_stance(user_answers, local_model)
     if "Error" in user_stance_summary or "Kunne ikke oppsummere" in user_stance_summary:
         return jsonify({'error': user_stance_summary}), 500
 
-    match_result = match_user_to_party(user_stance_summary, get_all_party_programs())
+    match_result = match_user_to_party(user_stance_summary, get_all_party_programs(), local_model)
     if "Error" in match_result or "Kunne ikke finne en match" in match_result:
         return jsonify({'error': match_result}), 500
 
@@ -409,14 +432,25 @@ def get_match():
     session.pop('question_count', None)
     session.pop('asked_questions', None)
     session.pop('quiz_active', None)
+    session.pop('gemini_api_key', None) # Clean up session
 
     return jsonify({'match_result': match_result})
 
 @app.route('/chat', methods=['POST'])
 def chat():
+    global model
     try:
         data = request.json
         user_message = data.get('message', '')
+        gemini_api_key = data.get('gemini_api_key')
+
+        local_model = model
+        if gemini_api_key:
+            try:
+                genai.configure(api_key=gemini_api_key)
+                local_model = genai.GenerativeModel('gemini-1.5-flash')
+            except Exception as e:
+                return jsonify({'error': f"Invalid Gemini API Key: {e}"}), 400
         
         if not user_message:
             return jsonify({'error': 'No message provided'}), 400
@@ -446,7 +480,7 @@ def chat():
             return jsonify({'response': 'Jeg kunne ikke finne programmet for det valgte partiet. Prøv igjen.'})
 
         # Get answer from Gemini
-        answer = answer_question_with_gemini(user_message, party_data)
+        answer = answer_question_with_gemini(user_message, party_data, local_model)
         
         return jsonify({
             'response': answer,

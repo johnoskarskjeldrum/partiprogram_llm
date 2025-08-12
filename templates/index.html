@@ -70,6 +70,15 @@
                         <p class="text-gray-600">Still spørsmål direkte til partiprogrammene. Sammenlign partier på saker som er viktige for deg.</p>
                     </div>
                 </div>
+                <div class="mt-8">
+                    <label for="geminiApiKeyInput" class="block text-sm font-medium text-gray-700 mb-2">Gemini API Key (valgfritt):</label>
+                    <div class="flex items-center space-x-2">
+                        <input type="password" id="geminiApiKeyInput" class="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-base px-4 py-3 placeholder-gray-400" placeholder="Lim inn din Gemini API-nøkkel her for å overstyre den som er i miljøet">
+                        <button onclick="saveApiKey()" class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Lagre</button>
+                        <button onclick="clearApiKey()" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-300">Tøm</button>
+                    </div>
+                    <p id="apiKeyStatus" class="text-sm text-gray-500 mt-1 h-4"></p>
+                </div>
             </div>
         </div>
 
@@ -258,10 +267,16 @@
             showLoading();
 
             try {
+                const geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+                const payload = { message: message };
+                if (geminiApiKey) {
+                    payload.gemini_api_key = geminiApiKey;
+                }
+
                 const response = await fetch('/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message })
+                    body: JSON.stringify(payload)
                 });
                 const data = await response.json();
                 hideLoading();
@@ -286,7 +301,17 @@
             showLoading();
 
             try {
-                await fetch('/start_quiz', { method: 'POST' });
+                const geminiApiKey = document.getElementById('geminiApiKeyInput').value.trim();
+                const payload = {};
+                if (geminiApiKey) {
+                    payload.gemini_api_key = geminiApiKey;
+                }
+
+                await fetch('/start_quiz', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
                 chatInputSection.style.display = 'none';
                 predefinedQuestionsDiv.style.display = 'none';
                 quizInputSection.style.display = 'flex';
@@ -469,7 +494,42 @@
         window.addEventListener('load', () => {
             showModeSelection();
             loadInitialData();
+            loadApiKeyFromStorage();
         });
+
+        function saveApiKey() {
+            const apiKey = document.getElementById('geminiApiKeyInput').value.trim();
+            const statusEl = document.getElementById('apiKeyStatus');
+            if (apiKey) {
+                localStorage.setItem('geminiApiKey', apiKey);
+                statusEl.textContent = 'API-nøkkel lagret i nettleseren.';
+                statusEl.style.color = 'green';
+            } else {
+                statusEl.textContent = 'Vennligst skriv inn en nøkkel.';
+                statusEl.style.color = 'red';
+            }
+            setTimeout(() => { statusEl.textContent = '' }, 3000);
+        }
+
+        function clearApiKey() {
+            localStorage.removeItem('geminiApiKey');
+            document.getElementById('geminiApiKeyInput').value = '';
+            const statusEl = document.getElementById('apiKeyStatus');
+            statusEl.textContent = 'API-nøkkel fjernet.';
+            statusEl.style.color = 'orange';
+            setTimeout(() => { statusEl.textContent = '' }, 3000);
+        }
+
+        function loadApiKeyFromStorage() {
+            const savedKey = localStorage.getItem('geminiApiKey');
+            if (savedKey) {
+                document.getElementById('geminiApiKeyInput').value = savedKey;
+                const statusEl = document.getElementById('apiKeyStatus');
+                statusEl.textContent = 'Lagret API-nøkkel lastet inn.';
+                statusEl.style.color = 'blue';
+                setTimeout(() => { statusEl.textContent = '' }, 3000);
+            }
+        }
     </script>
 </body>
 </html>
